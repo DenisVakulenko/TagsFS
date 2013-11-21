@@ -24,6 +24,33 @@ namespace TagsFS {
         public Int64 ParentID = -1;
         public TFSTag ParentTag = null;
     }
+    enum StandartAttr {
+        Name,
+        Extention,
+        Type,
+        Rating,
+
+        File_WasOpened,
+        File_WasCreated,
+        
+        Song_By,
+        Song_Name,
+        Song_Genre,
+        Song_Year,
+        Song_Lyrics,
+        Song_Length,
+        Song_Album,
+
+        Image_Resolution,
+        Image_Place,
+        Image_Peoples,
+        
+        Thumbnail_Id,
+        Thumbnail_Date,
+
+        TVSerial_Season,
+        TVSeries_Episode
+    }
     class TFSAttr {
         public TFSAttr(String _Name = "", long _Values = -1) {
             Name = _Name;
@@ -465,6 +492,10 @@ namespace TagsFS {
             StrCommand += "CREATE TABLE files       (id INTEGER PRIMARY KEY ASC, path TEXT, name TEXT);\n";
             StrCommand += "CREATE TABLE tags        (id INTEGER PRIMARY KEY ASC, name TEXT, parentid INTEGER);\n";
             StrCommand += "CREATE TABLE attributes  (id INTEGER PRIMARY KEY ASC, name TEXT, [values] TEXT);\n";
+
+            //foreach (StandartAttr a in (StandartAttr[])Enum.GetValues(typeof(StandartAttr))) {
+            //    StrCommand += "INSERT INTO attributes   (id, text)    VALUES("+ ((int)a).ToString() +", "+ a.ToString() +");\n";
+            //}
 
             StrCommand += "CREATE TABLE filestags         (id INTEGER PRIMARY KEY ASC, fileid INTEGER, tagid INTEGER, accuracy REAL);\n";
             StrCommand += "CREATE TABLE filesattributes   (id INTEGER PRIMARY KEY ASC, fileid INTEGER, attributeid INTEGER, value TEXT, accuracy REAL);\n";

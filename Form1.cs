@@ -30,19 +30,19 @@ namespace TagsFS {
             //addFilesInDir(@"F:\");
 
             //String Dir = "F:\\_ univer";
-            //String Dir = "H:\\";
-            //var Tags = new List<TFSTag>();
+            String Dir = "D:\\";
+            var Tags = new List<TFSTag>();
 
-            //long PrevID = -1;
-            //foreach (String tag in Dir.Split('\\')) {
-            //    TFSTag CurrentTag = mTagsDB.AddTag(tag, PrevID);
-            //    PrevID = CurrentTag.ID;
-            //    Tags.Add(CurrentTag);
-            //}
+            long PrevID = -1;
+            foreach (String tag in Dir.Split('\\')) {
+                TFSTag CurrentTag = mTagsDB.AddTag(tag, PrevID);
+                PrevID = CurrentTag.ID;
+                Tags.Add(CurrentTag);
+            }
 
-            //mTagsDB.OpenConnection();
-            //addFilesInDir(Dir, PrevID, Tags);
-            //mTagsDB.CloseConnection();
+            mTagsDB.OpenConnection();
+            addFilesInDir(Dir, PrevID, Tags);
+            mTagsDB.CloseConnection();
             //foreach (TFSTag Tag in newTags)
             //    lstTags.Items.Add(Tag.ID.ToString() + "  " + Tag.Name + "  pid:" + Tag.ParentID.ToString());
         }
