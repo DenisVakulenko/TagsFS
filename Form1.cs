@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Security;
+using System.Security.AccessControl;
 
 
 namespace TagsFS {
@@ -26,54 +28,82 @@ namespace TagsFS {
             //mTagsDB.AddTag("song");
 
             //addFilesInDir(@"F:\");
-            
-            String Dir = "F:\\_ univer";
-            var Tags = new List<TFSTag>();
 
-            long PrevID = -1;
-            foreach (String tag in Dir.Split('\\')) {
-                TFSTag CurrentTag = mTagsDB.AddTag(tag, PrevID);
-                PrevID = CurrentTag.ID;
-                Tags.Add(CurrentTag);
-            }
+            //String Dir = "F:\\_ univer";
+            //String Dir = "H:\\";
+            //var Tags = new List<TFSTag>();
 
-            addFilesInDir(Dir, PrevID, Tags);
+            //long PrevID = -1;
+            //foreach (String tag in Dir.Split('\\')) {
+            //    TFSTag CurrentTag = mTagsDB.AddTag(tag, PrevID);
+            //    PrevID = CurrentTag.ID;
+            //    Tags.Add(CurrentTag);
+            //}
 
+            //mTagsDB.OpenConnection();
+            //addFilesInDir(Dir, PrevID, Tags);
+            //mTagsDB.CloseConnection();
             //foreach (TFSTag Tag in newTags)
             //    lstTags.Items.Add(Tag.ID.ToString() + "  " + Tag.Name + "  pid:" + Tag.ParentID.ToString());
         }
 
         private void addFilesInDir(String Dir, long _ParentTagID = -1, List<TFSTag> _Tags = null) {
-            var NewFiles = new List<TFSFile>();
+            try {
+                var NewFiles = new List<TFSFile>();
+                foreach (String file in Directory.GetFiles(Dir)) {
+                    NewFiles.Add(new TFSFile(file, _Tags.Last()));
+                }
+                mTagsDB.CheckFiles(ref NewFiles);
 
-            foreach (String file in Directory.GetFiles(Dir)) {
-                NewFiles.Add(new TFSFile(file, _Tags));
+
+                var NewFilesTags = new List<TFSFileTag>();
+                foreach (TFSFile File in NewFiles) {
+                    NewFilesTags.AddRange(File.Tags);
+                }
+                mTagsDB.CheckFilesTags(NewFilesTags);
+
+
+                var SubDirsTags = new List<TFSTag>();
+                foreach (String SubDir in Directory.GetDirectories(Dir)) {
+                    SubDirsTags.Add(new TFSTag(Path.GetFileName(SubDir), _ParentTagID));
+                }
+                mTagsDB.CheckTags(ref SubDirsTags);
+
+
+                int i = 0;
+                foreach (String SubDir in Directory.GetDirectories(Dir)) {
+                    List<TFSTag> NewTags = _Tags;
+                    NewTags.Add(SubDirsTags[i]);
+
+                    addFilesInDir(SubDir, SubDirsTags[i].ID, NewTags);
+                    i++;
+                }
             }
-
-            mTagsDB.CheckFiles(ref NewFiles);
-
-            var SubDirsTags = new List<TFSTag>();
-
-            foreach (String SubDir in Directory.GetDirectories(Dir)) {
-                SubDirsTags.Add(new TFSTag(Path.GetFileName(SubDir), _ParentTagID));
-            }
-
-            mTagsDB.CheckTags(ref SubDirsTags);
-
-            int i = 0;
-            foreach (String SubDir in Directory.GetDirectories(Dir)) {
-                List<TFSTag> NewTags = _Tags;
-                NewTags.Add(SubDirsTags[i]);
-                
-                addFilesInDir(SubDir, SubDirsTags[i].ID, NewTags);
-                i++;
-            }
+            catch { }
         }
-
-        private TagsDB mTagsDB = new TagsDB();
 
         private void txtTagSearch_TextChanged(object sender, EventArgs e) {
+            List<TFSTag> Tags = mTagsDB.FindTagsLike(txtTagSearch.Text);
 
+            if (Tags == null) return;
+
+            lstTags.Items.Clear();
+            foreach (TFSTag Tag in Tags) {
+                lstTags.Items.Add(Tag.Name);
+            }
         }
+
+        private void txtFileSearch_TextChanged(object sender, EventArgs e) {
+            List<TFSFile> Files = mTagsDB.FindFilesLike(txtFileSearch.Text);
+
+            if (Files == null) return;
+
+            lstFiles.Items.Clear();
+            foreach (TFSFile File in Files) {
+                lstFiles.Items.Add(File.Path);
+            }
+        }
+        
+        private TagsDB mTagsDB = new TagsDB();
     }
 }

@@ -30,6 +30,8 @@
         {
             this.txtTagSearch = new System.Windows.Forms.TextBox();
             this.lstTags = new System.Windows.Forms.ListBox();
+            this.lstFiles = new System.Windows.Forms.ListBox();
+            this.txtFileSearch = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // txtTagSearch
@@ -48,11 +50,29 @@
             this.lstTags.Size = new System.Drawing.Size(156, 303);
             this.lstTags.TabIndex = 1;
             // 
+            // lstFiles
+            // 
+            this.lstFiles.FormattingEnabled = true;
+            this.lstFiles.Location = new System.Drawing.Point(174, 38);
+            this.lstFiles.Name = "lstFiles";
+            this.lstFiles.Size = new System.Drawing.Size(387, 303);
+            this.lstFiles.TabIndex = 3;
+            // 
+            // txtFileSearch
+            // 
+            this.txtFileSearch.Location = new System.Drawing.Point(174, 12);
+            this.txtFileSearch.Name = "txtFileSearch";
+            this.txtFileSearch.Size = new System.Drawing.Size(156, 20);
+            this.txtFileSearch.TabIndex = 2;
+            this.txtFileSearch.TextChanged += new System.EventHandler(this.txtFileSearch_TextChanged);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(651, 361);
+            this.Controls.Add(this.lstFiles);
+            this.Controls.Add(this.txtFileSearch);
             this.Controls.Add(this.lstTags);
             this.Controls.Add(this.txtTagSearch);
             this.Name = "Form1";
@@ -67,6 +87,8 @@
 
         private System.Windows.Forms.TextBox txtTagSearch;
         private System.Windows.Forms.ListBox lstTags;
+        private System.Windows.Forms.ListBox lstFiles;
+        private System.Windows.Forms.TextBox txtFileSearch;
     }
 }
 
