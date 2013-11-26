@@ -8,7 +8,7 @@ using System.Data.Common;
 using System.Data;
 
 namespace TagsFS {
-    class TFSTag {
+    public class TFSTag {
         public TFSTag(String _Name = "", Int64 _ParentID = -1) {
             Name = _Name;
             ParentID = _ParentID;
@@ -24,14 +24,14 @@ namespace TagsFS {
         public Int64 ParentID = -1;
         public TFSTag ParentTag = null;
     }
-    enum StandartAttr {
+    public enum StandartAttr {
         Name,
         Extention,
         Type,
         Rating,
 
-        File_WasOpened,
         File_WasCreated,
+        File_WasModified,
         
         Song_By,
         Song_Name,
@@ -48,10 +48,14 @@ namespace TagsFS {
         Thumbnail_Id,
         Thumbnail_Date,
 
-        TVSerial_Season,
+        TVSeries_Season,
         TVSeries_Episode
     }
-    class TFSAttr {
+    public class TFSAttr {
+        public TFSAttr(StandartAttr _Attr) {
+            ID = (Int64)_Attr;
+            Name = _Attr.ToString();
+        }
         public TFSAttr(String _Name = "", long _Values = -1) {
             Name = _Name;
             Values += _Values;
@@ -66,7 +70,7 @@ namespace TagsFS {
         public String Name = "";
         public String Values = "";
     }
-    class TFSFile {
+    public class TFSFile {
         public TFSFile(String _Path = "", TFSTag _Tag = null) {
             ID = -1;
             Path = _Path;
@@ -104,8 +108,7 @@ namespace TagsFS {
         public bool AttrsSynchronized = false;
         public List<TFSFileAttribute> Attrs = null;
     }
-
-    class TFSFileTag {
+    public class TFSFileTag {
         public TFSFileTag(TFSFile _File, TFSTag _Tag, Double _Accuracy = 1) {
             File = _File;
             Tag = _Tag;
@@ -117,7 +120,7 @@ namespace TagsFS {
         public TFSTag Tag = null;
         public Double Accuracy = 1;
     }
-    class TFSFileAttribute {
+    public class TFSFileAttribute {
         public TFSFileAttribute(TFSFile _File = null, TFSAttr _Attr = null, String _Value = "", Double _Accuracy = 1) {
             File = _File;
             Attr = _Attr;
@@ -133,9 +136,9 @@ namespace TagsFS {
 
 
 
-    class TagsDB {
+    public class TagsDB {
         public TagsDB() {
-            String Path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Tags4.db3";
+            String Path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Tags.db3";
 
             if (!System.IO.File.Exists(Path)) {
                 Connection = new SQLiteConnection("URI=file:" + Path);
@@ -147,7 +150,6 @@ namespace TagsFS {
             OpenConnection();
         }
 
-
         public void OpenConnection() {
             if (Connection.State != ConnectionState.Open) {
                 Connection.Open();
@@ -157,6 +159,8 @@ namespace TagsFS {
                     cmd.CommandText = "PRAGMA journal_mode = OFF;";
                     cmd.ExecuteNonQuery();
                     cmd.CommandText = "PRAGMA cache_size = 8000;";
+                    cmd.ExecuteNonQuery();
+                    cmd.CommandText = "PRAGMA recursive_triggers = ON;";
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -425,8 +429,7 @@ namespace TagsFS {
             return ID;
         }
         public TFSTag AddTag(String _Name, long _PTagID = -1) {
-            ConnectionState prevConnectionState = Connection.State;
-            if (prevConnectionState == ConnectionState.Closed) Connection.Open();
+            ConnectionState prevConnectionState = Connection.State; OpenConnection();
 
             long ID = -1;
             
@@ -463,25 +466,31 @@ namespace TagsFS {
 
 
         public List<TFSTag> GetTagHierarchy(TFSTag Tag) {
+            ConnectionState prevConnectionState = Connection.State; OpenConnection();
+            
             List<TFSTag> Hierarchy = new List<TFSTag>();
 
             using (SQLiteCommand cmd = new SQLiteCommand(Connection)) {
                 Hierarchy.Add(Tag);
 
-
-                if (Tag.ParentID != -1) {
-
+                while (Tag.ParentID != -1) {
                     cmd.CommandText = "SELECT * FROM tags WHERE id = '" + Tag.ParentID.ToString() + "';";
 
                     using (SQLiteDataReader reader = cmd.ExecuteReader()) {
                         if (reader.HasRows) {
-                            Tag.ID = reader.GetInt64(0);
-                            Tag.Name = reader.GetString(1);
-                            Tag.ParentID = reader.GetInt64(2);
+                            reader.Read();
+                            Tag.ParentTag = new TFSTag(reader.GetInt64(0), reader.GetString(1), reader.GetInt64(2));
+                            Tag = Tag.ParentTag;
+                            Hierarchy.Add(Tag);
+                        }
+                        else {
+                            Tag.ParentID = -1;
                         }
                     }
                 }
             }
+
+            if (prevConnectionState == ConnectionState.Closed) Connection.Close();
 
             return Hierarchy;
         }
@@ -493,24 +502,68 @@ namespace TagsFS {
             StrCommand += "CREATE TABLE tags        (id INTEGER PRIMARY KEY ASC, name TEXT, parentid INTEGER);\n";
             StrCommand += "CREATE TABLE attributes  (id INTEGER PRIMARY KEY ASC, name TEXT, [values] TEXT);\n";
 
-            //foreach (StandartAttr a in (StandartAttr[])Enum.GetValues(typeof(StandartAttr))) {
-            //    StrCommand += "INSERT INTO attributes   (id, text)    VALUES("+ ((int)a).ToString() +", "+ a.ToString() +");\n";
-            //}
-
             StrCommand += "CREATE TABLE filestags         (id INTEGER PRIMARY KEY ASC, fileid INTEGER, tagid INTEGER, accuracy REAL);\n";
             StrCommand += "CREATE TABLE filesattributes   (id INTEGER PRIMARY KEY ASC, fileid INTEGER, attributeid INTEGER, value TEXT, accuracy REAL);\n";
             StrCommand += "CREATE TABLE tagssynonyms      (id INTEGER PRIMARY KEY ASC, tagida INTEGER, tagidb INTEGER, accuracy REAL);\n";
-            //StrCommand += "CREATE TABLE tagsattributes (id INTEGER PRIMARY KEY ASC, tagid INTEGER, attributeid INTEGER, value TEXT, accuracy INTEGER);\n";
-
+            StrCommand += "CREATE TABLE tagsattributes (id INTEGER PRIMARY KEY ASC, tagid INTEGER, attributeid INTEGER, value TEXT, accuracy INTEGER);\n";
 
             SQLiteCommand Command = new SQLiteCommand(StrCommand, Connection);
             Connection.Open();
             Command.ExecuteNonQuery();
+
+            Command.CommandText = "";
+            foreach (StandartAttr a in (StandartAttr[])Enum.GetValues(typeof(StandartAttr))) {
+                TFSAttr Attr = new TFSAttr(a);
+                Command.CommandText += "INSERT INTO attributes   (id, text)    VALUES(" + Attr.ID.ToString() + ", '" + Attr.Name + "');\n";
+            }
+
             Connection.Close();
         }
 
 
         private SQLiteConnection Connection;
+
+        internal List<TFSTag> FindAllTagChildren(TFSTag _Tag) {
+            ConnectionState prevConnectionState = Connection.State; OpenConnection();
+
+            List<TFSTag> Result = new List<TFSTag>();
+
+            using (SQLiteCommand cmd = new SQLiteCommand(Connection)) {
+                cmd.CommandText = "CREATE TEMPORARY TABLE alltagschildren (id INTEGER)";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = "CREATE TRIGGER alltagschildren AFTER INSERT " +
+                                  "ON alltagschildren " +
+                                  "BEGIN " +
+                                    "INSERT INTO alltagschildren(id) select id from tags where parentid = new.id; " +
+                                  "END;";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = "INSERT INTO alltagschildren VALUES(" + _Tag.ID + ");";
+                cmd.ExecuteNonQuery();
+
+                //long liri = -1;
+                //while (liri != Connection.LastInsertRowId) {
+                //    liri = Connection.LastInsertRowId;
+                //    cmd.CommandText = "INSERT INTO alltagschildren (id) SELECT id FROM tags WHERE parentid IN (SELECT id FROM alltagschildren) AND id NOT IN (SELECT id FROM alltagschildren);";
+                //    cmd.ExecuteNonQuery();
+                //}
+
+                cmd.CommandText = "SELECT * FROM tags WHERE id IN (SELECT id FROM alltagschildren);";
+                using (SQLiteDataReader reader = cmd.ExecuteReader()) {
+                    foreach (DbDataRecord record in reader) {
+                        Result.Add(new TFSTag(record.GetInt64(0), record.GetString(1), record.GetInt64(2)));
+                    }
+                }
+
+                cmd.CommandText = "DROP TABLE alltagschildren;";
+                cmd.ExecuteNonQuery();
+            }
+
+            if (prevConnectionState == ConnectionState.Closed) Connection.Close();
+
+            return Result;
+        }
     }
 
 

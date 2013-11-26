@@ -29,15 +29,17 @@ namespace TagsFS {
 
             //addFilesInDir(@"F:\");
 
-            //String Dir = "F:\\_ univer";
-            String Dir = "D:\\";
+            String Dir = "D:\\_RockGroup";
+            //String Dir = "D:\\";
             var Tags = new List<TFSTag>();
 
             long PrevID = -1;
             foreach (String tag in Dir.Split('\\')) {
-                TFSTag CurrentTag = mTagsDB.AddTag(tag, PrevID);
-                PrevID = CurrentTag.ID;
-                Tags.Add(CurrentTag);
+                if (tag != "") {
+                    TFSTag CurrentTag = mTagsDB.AddTag(tag, PrevID);
+                    PrevID = CurrentTag.ID;
+                    Tags.Add(CurrentTag);
+                }
             }
 
             mTagsDB.OpenConnection();
@@ -45,6 +47,34 @@ namespace TagsFS {
             mTagsDB.CloseConnection();
             //foreach (TFSTag Tag in newTags)
             //    lstTags.Items.Add(Tag.ID.ToString() + "  " + Tag.Name + "  pid:" + Tag.ParentID.ToString());
+
+            // Attributes test
+            //mTagsDB.CheckAttribute("Definition");
+            //mTagsDB.CheckAttribute("Definition");
+            //mTagsDB.CheckAttribute("Definition", "Nice,Good");
+            //mTagsDB.CheckAttribute("Definition", "Good,Cool,Bad");
+            //mTagsDB.CheckAttribute("Definition");
+
+            
+        }
+
+        public void TagClick(object sender, TagsFS.ucTagBranch.TagClickEventArgs e) {
+            this.Text = e.Tag.Name;
+
+            flowLayoutPanel1.Controls.Clear();
+
+            List<TFSTag> Tags = mTagsDB.FindAllTagChildren(e.Tag);
+
+            if (Tags == null) return;
+
+            //lstTags.Items.Clear();
+            foreach (TFSTag Tag in Tags) {
+                //lstTags.Items.Add(Tag.Name);
+                mTagsDB.GetTagHierarchy(Tag);
+                var tb = new ucTagBranch(Tag);
+                tb.TagClick += TagClick;
+                flowLayoutPanel1.Controls.Add(tb);
+            }
         }
 
         private void addFilesInDir(String Dir, long _ParentTagID = -1, List<TFSTag> _Tags = null) {
@@ -83,13 +113,19 @@ namespace TagsFS {
         }
 
         private void txtTagSearch_TextChanged(object sender, EventArgs e) {
+            flowLayoutPanel1.Controls.Clear();
+
             List<TFSTag> Tags = mTagsDB.FindTagsLike(txtTagSearch.Text);
 
             if (Tags == null) return;
 
-            lstTags.Items.Clear();
+            //lstTags.Items.Clear();
             foreach (TFSTag Tag in Tags) {
-                lstTags.Items.Add(Tag.Name);
+                //lstTags.Items.Add(Tag.Name);
+                mTagsDB.GetTagHierarchy(Tag);
+                var tb = new ucTagBranch(Tag);
+                tb.TagClick += TagClick;
+                flowLayoutPanel1.Controls.Add(tb);
             }
         }
 
@@ -99,8 +135,11 @@ namespace TagsFS {
             if (Files == null) return;
 
             lstFiles.Items.Clear();
+            ltFiles.Controls.Clear();
             foreach (TFSFile File in Files) {
                 lstFiles.Items.Add(File.Path);
+                
+                ltFiles.Controls.Add(new ucFile(File));
             }
         }
         
