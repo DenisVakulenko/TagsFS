@@ -31,18 +31,18 @@
             // ltAttributes
             // 
             this.ltAttributes.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.ltAttributes.Location = new System.Drawing.Point(3, 32);
+            this.ltAttributes.Location = new System.Drawing.Point(3, 16);
             this.ltAttributes.Name = "ltAttributes";
-            this.ltAttributes.Size = new System.Drawing.Size(255, 100);
+            this.ltAttributes.Size = new System.Drawing.Size(255, 139);
             this.ltAttributes.TabIndex = 0;
             this.ltAttributes.WrapContents = false;
             // 
             // ltTags
             // 
             this.ltTags.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.ltTags.Location = new System.Drawing.Point(264, 32);
+            this.ltTags.Location = new System.Drawing.Point(264, 16);
             this.ltTags.Name = "ltTags";
-            this.ltTags.Size = new System.Drawing.Size(285, 100);
+            this.ltTags.Size = new System.Drawing.Size(285, 139);
             this.ltTags.TabIndex = 1;
             this.ltTags.WrapContents = false;
             // 
@@ -63,7 +63,7 @@
             this.Controls.Add(this.ltTags);
             this.Controls.Add(this.ltAttributes);
             this.Name = "ucFile";
-            this.Size = new System.Drawing.Size(552, 135);
+            this.Size = new System.Drawing.Size(552, 158);
             this.ResumeLayout(false);
             this.PerformLayout();
 

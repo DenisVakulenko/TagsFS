@@ -55,7 +55,7 @@ namespace TagsFS {
             //mTagsDB.CheckAttribute("Definition", "Good,Cool,Bad");
             //mTagsDB.CheckAttribute("Definition");
 
-            
+            mTagsDB.LoadAllTags();
         }
 
         public void TagClick(object sender, TagsFS.ucTagBranch.TagClickEventArgs e) {
@@ -78,26 +78,28 @@ namespace TagsFS {
         }
 
         private void addFilesInDir(String Dir, long _ParentTagID = -1, List<TFSTag> _Tags = null) {
-            try {
+            //try {
                 var NewFiles = new List<TFSFile>();
                 foreach (String file in Directory.GetFiles(Dir)) {
                     NewFiles.Add(new TFSFile(file, _Tags.Last()));
                 }
                 mTagsDB.CheckFiles(ref NewFiles);
 
-
+                var NewFilesAttributes = mTagsDB.GenerateFileAttributes(NewFiles);
+                mTagsDB.CheckFilesAttributes(NewFilesAttributes);
+                
                 var NewFilesTags = new List<TFSFileTag>();
+                mTagsDB.GenerateFileTags(NewFiles); //NewFilesTags.AddRange(mTagsDB.GenerateFileTags(NewFiles));    
                 foreach (TFSFile File in NewFiles) {
                     NewFilesTags.AddRange(File.Tags);
                 }
                 mTagsDB.CheckFilesTags(NewFilesTags);
 
-
                 var SubDirsTags = new List<TFSTag>();
                 foreach (String SubDir in Directory.GetDirectories(Dir)) {
                     SubDirsTags.Add(new TFSTag(Path.GetFileName(SubDir), _ParentTagID));
                 }
-                mTagsDB.CheckTags(ref SubDirsTags);
+                mTagsDB.CheckTags(SubDirsTags);
 
 
                 int i = 0;
@@ -108,8 +110,8 @@ namespace TagsFS {
                     addFilesInDir(SubDir, SubDirsTags[i].ID, NewTags);
                     i++;
                 }
-            }
-            catch { }
+            //}
+            //catch { }
         }
 
         private void txtTagSearch_TextChanged(object sender, EventArgs e) {
@@ -131,6 +133,8 @@ namespace TagsFS {
 
         private void txtFileSearch_TextChanged(object sender, EventArgs e) {
             List<TFSFile> Files = mTagsDB.FindFilesLike(txtFileSearch.Text);
+            mTagsDB.FillFilesAttributes(Files);
+            mTagsDB.FillFilesTags(Files);
 
             if (Files == null) return;
 

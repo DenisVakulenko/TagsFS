@@ -24,7 +24,7 @@ namespace TagsFS {
         }
         public ucFileAttribute(TFSFileAttribute _FileAttribute) {
             InitializeComponent();
-            mFileAttribute = _FileAttribute;
+            FileAttribute = _FileAttribute;
         }
 
         private TFSFileAttribute mFileAttribute;
