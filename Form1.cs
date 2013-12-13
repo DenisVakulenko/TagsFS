@@ -27,10 +27,11 @@ namespace TagsFS {
             //mTagsDB.AddTag("image");
             //mTagsDB.AddTag("song");
 
+            return;
             //addFilesInDir(@"F:\");
 
-            String Dir = "D:\\_RockGroup";
-            //String Dir = "D:\\";
+            //String Dir = "D:\\_RockGroup";
+            String Dir = "D:\\";
             var Tags = new List<TFSTag>();
 
             long PrevID = -1;
@@ -46,7 +47,7 @@ namespace TagsFS {
             addFilesInDir(Dir, PrevID, Tags);
             mTagsDB.CloseConnection();
             //foreach (TFSTag Tag in newTags)
-            //    lstTags.Items.Add(Tag.ID.ToString() + "  " + Tag.Name + "  pid:" + Tag.ParentID.ToString());
+            //lstTags.Items.Add(Tag.ID.ToString() + "  " + Tag.Name + "  pid:" + Tag.ParentID.ToString());
 
             // Attributes test
             //mTagsDB.CheckAttribute("Definition");
@@ -78,7 +79,7 @@ namespace TagsFS {
         }
 
         private void addFilesInDir(String Dir, long _ParentTagID = -1, List<TFSTag> _Tags = null) {
-            //try {
+            try {
                 var NewFiles = new List<TFSFile>();
                 foreach (String file in Directory.GetFiles(Dir)) {
                     NewFiles.Add(new TFSFile(file, _Tags.Last()));
@@ -110,8 +111,8 @@ namespace TagsFS {
                     addFilesInDir(SubDir, SubDirsTags[i].ID, NewTags);
                     i++;
                 }
-            //}
-            //catch { }
+            }
+            catch { }
         }
 
         private void txtTagSearch_TextChanged(object sender, EventArgs e) {
@@ -132,21 +133,151 @@ namespace TagsFS {
         }
 
         private void txtFileSearch_TextChanged(object sender, EventArgs e) {
-            List<TFSFile> Files = mTagsDB.FindFilesLike(txtFileSearch.Text);
+            Text = "FindFilesLike";
+            String fileswhere = "";
+            String tagswhere = "";
+            String attrswhere = "";
+            if (txtFileSearch.Text == "") return;
+            var prms = txtFileSearch.Text.Split(' ');
+            foreach (var prm in prms) {
+                if (prm != "") {
+                    //tagswhere += "name REGEXP '[[:<:]]" + prm + "[[:>:]]' AND ";
+                    tagswhere += "([name] LIKE '% " + prm + " %' OR ";
+                    tagswhere += "[name] LIKE  '% " + prm + "' OR ";
+                    tagswhere += "[name] LIKE  '" + prm + " %' OR ";
+
+                    tagswhere += "[name] LIKE  '% " + prm + "/_%' ESCAPE '/' OR ";
+                    tagswhere += "[name] LIKE  '%/_" + prm + " %' ESCAPE '/' OR ";
+
+                    tagswhere += "[name] LIKE  '%/_" + prm + "/_%' ESCAPE '/' OR ";
+                    tagswhere += "[name] LIKE  '%/_" + prm + "' ESCAPE '/' OR ";
+                    tagswhere += "[name] LIKE  '" + prm + "/_%' ESCAPE '/' OR ";
+
+                    tagswhere += "[name] LIKE  '" + prm + "') AND ";
+
+
+                    attrswhere += "([value] LIKE '% " + prm + " %' OR ";
+                    attrswhere += "[value] LIKE  '% " + prm + "' OR ";
+                    attrswhere += "[value] LIKE  '" + prm + " %' OR ";
+
+                    attrswhere += "[value] LIKE  '% " + prm + "/_%' ESCAPE '/' OR ";
+                    attrswhere += "[value] LIKE  '%/_" + prm + " %' ESCAPE '/' OR ";
+
+                    attrswhere += "[value] LIKE  '%/_" + prm + "/_%' ESCAPE '/' OR ";
+                    attrswhere += "[value] LIKE  '%/_" + prm + "' ESCAPE '/' OR ";
+                    attrswhere += "[value] LIKE  '" + prm + "/_%' ESCAPE '/' OR ";
+
+                    attrswhere += "[value] LIKE  '" + prm + "') AND ";
+
+                    fileswhere += "path LIKE '%" + prm + "%' AND ";
+
+                    //if (prm.Substring(0, 4) == "tag:")
+                    //    tagswhere += "name LIKE '" + prm.Substring(4) + "'";
+                    //else if (prm.Substring(0, 5) == "attr:")
+                    //    attrswhere += "value LIKE '" + prm.Substring(5) + "'";
+                    //else
+                    //    fileswhere += "path LIKE '" + Name + "'";
+                }
+            }
+            tagswhere  = tagswhere.Substring(0, tagswhere.Length - 5);
+            attrswhere = attrswhere.Substring(0, attrswhere.Length - 5);
+            fileswhere = fileswhere.Substring(0, fileswhere.Length - 5);
+
+            var Tags = mTagsDB.FindTagsWhere(tagswhere);
+
+            flowLayoutPanel1.Controls.Clear();
+            if (Tags != null)
+                foreach (TFSTag Tag in Tags) {
+                    //lstTags.Items.Add(Tag.Name);
+                    //mTagsDB.GetTagHierarchy(Tag);
+                    var tb = new ucTagBranch(Tag);
+                    tb.TagClick += TagClick;
+                    flowLayoutPanel1.Controls.Add(tb);
+                }
+
+            var Attrs = mTagsDB.FindFileAttrsWhere(attrswhere);
+            if (Attrs.Count > 10) Attrs = Attrs.GetRange(0, 10);
+
+            //ltAttributes.Controls.Clear();
+            while (ltAttributes.Controls.Count > 1)
+                ltAttributes.Controls.RemoveAt(0);
+
+            if (Attrs != null)
+                foreach (TFSFileAttribute FileAttr in Attrs) {
+                    var Attribute = new ucFileAttribute(FileAttr);
+                    ltAttributes.Controls.Add(Attribute);
+                    ltAttributes.Controls.SetChildIndex(Attribute, ltAttributes.Controls.Count - 2);
+                }
+
+            //return;
+            var Files = mTagsDB.FindFilesWhere(fileswhere); //Like("%" + txtFileSearch.Text + "%");
+
+            if (Files.Count > 10) Files = Files.GetRange(0, 10);
+            Text = "FillFilesAttributes";
             mTagsDB.FillFilesAttributes(Files);
+            Text = "FillFilesTags";
             mTagsDB.FillFilesTags(Files);
 
-            if (Files == null) return;
-
-            lstFiles.Items.Clear();
             ltFiles.Controls.Clear();
+
+            Text = "Filling list";
+
+            int i = 10;
             foreach (TFSFile File in Files) {
-                lstFiles.Items.Add(File.Path);
-                
-                ltFiles.Controls.Add(new ucFile(File));
+                ucFile ucF = new ucFile(File);
+                ucF.Enter += ucF_Enter;
+                //ucF.Dock = DockStyle.Fill;
+                ucF.Width = ltFiles.Width - 30;
+                ltFiles.Controls.Add(ucF);
+
+                i--;
+                if (i < 0) return;
             }
+
+            Text = "Ready";
         }
-        
+
+        void ucF_Enter(object sender, EventArgs e) {
+            mTagsDB.LoadAllAttrs();
+
+            TFSFile File = ((ucFile)sender).File;
+
+            ucAddFileAttr1.DB = File.DB;
+
+            while (ltAttributes.Controls.Count > 1)
+                ltAttributes.Controls.RemoveAt(0);
+
+            if (File.Attrs != null)
+                foreach (TFSFileAttribute FileAttr in File.Attrs) {
+                    var Attribute = new ucFileAttribute(FileAttr);
+                    ltAttributes.Controls.Add(Attribute);
+                    ltAttributes.Controls.SetChildIndex(Attribute, ltAttributes.Controls.Count - 2);
+                }
+
+            mFile = File;
+        }
+
+        private TFSFile mFile = null;
         private TagsDB mTagsDB = new TagsDB();
+
+        private void ucAddFileAttr1_AddFileAttr(object sender, ucAddFileAttr.AddFileAttrEventArgs e) {
+            e.FileAttr.File = mFile;
+            mFile.Attrs.Add(e.FileAttr);
+            e.FileAttr.FixInBase();
+
+            TFSFile File = mFile;
+
+            ucAddFileAttr1.DB = File.DB;
+
+            while (ltAttributes.Controls.Count > 1)
+                ltAttributes.Controls.RemoveAt(0);
+
+            if (File.Attrs != null)
+                foreach (TFSFileAttribute FileAttr in File.Attrs) {
+                    var Attribute = new ucFileAttribute(FileAttr);
+                    ltAttributes.Controls.Add(Attribute);
+                    ltAttributes.Controls.SetChildIndex(Attribute, ltAttributes.Controls.Count - 2);
+                }
+        }
     }
 }

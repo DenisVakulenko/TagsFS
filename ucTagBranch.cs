@@ -27,15 +27,17 @@ namespace TagsFS {
             Tag = _Tag;
         }
 
-        private void tfsTagBranch_Load(object sender, EventArgs e) {
+        
 
+        private void tfsTagBranch_Load(object sender, EventArgs e) {
+            
         }
 
         private void tfsTagBranch_Paint(object sender, PaintEventArgs e) {
             Graphics g = e.Graphics;
             TFSTag t = mTag;
             PointF p = new PointF(0, 0);
-            Font f = new Font("Segoe UI", 9);
+            Font f = Font;// new Font("Segoe UI", 9);
 
             List<float> sizes = new List<float>();
             
@@ -51,20 +53,21 @@ namespace TagsFS {
             while (t != null) {
                 i++;
                 p.X -= sizes[i-1];
-                g.DrawString(t.Name, f, new SolidBrush((t != mTagMM) ? Color.FromArgb(0, 0, 0) : Color.FromArgb(19, 130, 206)), p);
+                g.DrawString(t.Name, f, new SolidBrush((t != mTagMM) ? ForeColor : Color.FromArgb(19, 130, 206)), p);
                 
                 t = t.ParentTag;
             }
 
-            if (mTagMM != null) {
+            if (mTagMM != null || mFocused) {
                 Rectangle r = ClientRectangle;
                 r.Size = r.Size - new Size(1, 1);
                 g.DrawRectangle(new Pen(Color.FromArgb(50, 50, 50, 100)), r);
             }
         }
 
+        protected Boolean mFocused = false;
         private TFSTag mTagMM;
-        private TFSTag mTag;
+        protected TFSTag mTag;
         
         public TFSTag Tag {
             get {
@@ -76,7 +79,7 @@ namespace TagsFS {
                 Graphics g = this.CreateGraphics();
                 TFSTag t = mTag;
                 PointF p = new PointF(0, 0);
-                Font f = new Font("Segoe UI", 9);
+                Font f = Font;// new Font("Segoe UI", 9);
 
                 List<float> sizes = new List<float>();
 
@@ -96,7 +99,7 @@ namespace TagsFS {
             Graphics g = this.CreateGraphics();
             TFSTag t = mTag;
             PointF p = new PointF(0, 0);
-            Font f = new Font("Segoe UI", 9);
+            Font f = Font; // new Font("Segoe UI", 9);
 
             List<float> sizes = new List<float>();
 
@@ -134,9 +137,32 @@ namespace TagsFS {
         }
 
         private void tfsTagBranch_MouseUp(object sender, MouseEventArgs e) {
+            if (mTagMM == null) return;
+
             EventHandler<TagClickEventArgs> handler = this.TagClick;
             if (handler != null)
                 handler(this, new TagClickEventArgs(mTagMM));
+        }
+
+        private void ucTagBranch_Resize(object sender, EventArgs e) {
+            //btnDelete.Location = new Point(0, Width - btnDelete.Width);
+            
+        }
+
+        private void ucTagBranch_FontChanged(object sender, EventArgs e) {
+            Graphics g = this.CreateGraphics();
+            Font f = Font;
+            Height = f.Height - 1;
+        }
+
+        private void ucTagBranch_Enter(object sender, EventArgs e) {
+            mFocused = true;
+            Refresh();
+        }
+
+        private void ucTagBranch_Leave(object sender, EventArgs e) {
+            mFocused = false;
+            Refresh();
         }
     }
 }

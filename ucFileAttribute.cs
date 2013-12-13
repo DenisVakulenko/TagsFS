@@ -48,9 +48,20 @@ namespace TagsFS {
         private void txtValue_Leave(object sender, EventArgs e) {
             mFileAttribute.Value = txtValue.Text;
 
+            mFileAttribute.FixInBase();
+
             EventHandler<AttributeChangedEventArgs> handler = this.FileAttributeChanged;
             if (handler != null)
                 handler(this, new AttributeChangedEventArgs(mFileAttribute));
+        }
+
+        private void btnDelete_Click(object sender, EventArgs e) {
+            mFileAttribute.Delete();
+            this.Dispose();
+        }
+
+        private void flowLayoutPanel1_Paint(object sender, PaintEventArgs e) {
+
         }
     }
 }
